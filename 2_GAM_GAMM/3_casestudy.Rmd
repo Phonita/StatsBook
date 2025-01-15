@@ -1,0 +1,133 @@
+---
+title: "Implementing GAMs in R"
+output: html_document
+date: "2024-12-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+# **Case Study for GAMs in R**
+
+Now that we have learned what GAMs are and why we should consider using them, the most important question becomes how can we use them? Using Rstudio, we will be going over the key aspects of implementing GAMs in the following case study, using a GAM from start to finish.
+As is often the case, GAMs can be used with many different packages in R. The best one – at least in our opinion – is the package mgcv, due to its expansiveness and good documentation.
+
+
+
+**Preparation**
+
+```{r}
+library(mgcv)
+library(ggplot2)
+library(tidyverse)
+
+Count_data <- read.csv("gam.csv")
+```
+
+**Conducting a basic GAM with mgcv**
+
+The first and most important step is finding out how to create a GAM using this package, and it is pretty straightforward, using the “gam()” function:
+
+
+
+```{r}
+model <- gam(Fish_Count ~ s(Temperature)+s(Depth)+s(Salinity)+
+               s(Chlorophyll),family = poisson, data = Count_data)
+
+```
+
+
+
+In this example code, you can see the basic syntax of the function, which is similar to how you would write a GLM. The difference in this case is the addition of the “s()” function used around some of the predictors in this example. S stands for the smoothing function. The amount of smoothing is automatically determined if left on default settings. However, you can of course set a certain amount of knots yourself to adjust.
+
+Another important part is the "family" argument in the code. It specifies the type of distribution we have in our response, and thereby specifies the type of link function that we use for our model. In our case, we have count data of fish being reported in certain waters, so it has to be a poisson distribution. For example, if we would be looking at a continuous, normally distributed response, the family argument would have to be set to "gaussian", if it were binomial data to "binomial", and so on. You can find all different distributions to use in this argument in the online documentation of the mgcv package.
+
+
+
+**Adjusting smoothness**
+
+```{r}
+
+
+model2 <- gam(Fish_Count ~ s(Temperature,k=3),data = Count_data)
+
+# p-value for Temperature = 0.879
+
+model3 <- gam(Fish_Count ~ s(Temperature,k=12),data = Count_data)
+
+# p-value for Temperature = 0.00386 **
+
+
+
+plot(model2,main = "Effect of T on Fish Count (k = 3)",ylab = "Partial effect",cex.lab = 0.8, cex.main = 1.0,shade = T,col= "#72BAAA",lwd = 2)
+
+plot(model3,main = "Effect of T on Fish Count (k = 12)", ylab = "Partial effect",cex.lab = 0.8, cex.main = 1.0,shade = T,col= "#72BAAA", lwd = 2)
+
+
+```
+**Fig. 1+2:** Plot of the partial effect of temperature on fish count over temperature. Solid line indicates the effect derived from the model, shaded area shows the 95% confidence interval. Small lines on the x-axis display the distribution of the data points in terms of temperature. The number of knots used for the smoothing function was 3 for Fig. 1 and 12 for Fig. 2.
+
+
+
+Here you can see the difference between outcomes when the same model is run with a different amount of knots, by adjusting the “k” argument within the smoothed predictors of the GAM. This can help adjust your model to be more accurate, but also holds the risk of overfitting, as the second example shows. As you can see from the return of p-values for the temperature of each model, having higher degrees of freedom also "helps" in getting more significant p-values. This once again emphasiszes that you should not use too many knots, as this will make every development you can think of statistically significant!
+
+
+
+**Diagnostics and assumption testing**
+
+Lastly, to get an overview of the model output, you can use the summary command, and can also plot the model diagnostics using the basic plot function.
+
+
+
+```{r}
+summary(model2)
+
+plot(model2,residuals = T,pch=16,ylab = "Partial effect",main = "Effect of Temperature on Fish Count with residuals",cex.lab = 0.8, cex.main = 1.0,cex = 0.6, col= "#72BAAA",shade = T,lwd= 2)
+
+```
+**Fig. 3:** Plot of the partial effect of temperature on fish count over temperature. Solid line indicates the effect derived from the model, shaded area shows the 95% confidence interval. Points in the plot indicate the residuals for the data. Small lines on the x-axis display the distribution of the data points in terms of temperature.
+
+
+The outcome of the summary will let you know about your models degrees of freedom, the model fit statistics as well as the significance of all your smoothing terms for the different predictors. You should know most of this output structure from previous models you have run like simple linear models or GLMs.
+
+
+
+```{r}
+par(mfrow = c(2, 2)) 
+
+gam.check(model2,col="#72BAAA",cex.lab = 0.8, cex.main = 1.0, cex = 0.4)
+```
+
+
+You can further check the validity of your model using different diagnostics plots obtained by using the function gam.check(). Here's what information each of the four returned plots can provide you:
+
+
+- **Residuals over theoretical quantiles:**
+
+This plot shows you the fit towards a normal distribution by comparing the actual residuals as dotted datapoints against theoretical, normally distributed quantiles, displayed by the colored 45 degree line. The closer the points are to the line, the more does the distribution in our data fit to a normal distribution. In our case, we are working with a poisson distribution to the data being count data, so we don't need to be alarmed by the slight departures from this line.
+
+- **Residuals vs linear predictor:**
+
+This plot shows the variation of residuals across the linear predictor. This can be used to check for homoscedasticity, in other words to check whether the residuals are spread evenly across all levels of the linear predictor.
+
+- **Histogram of residuals:**
+
+This simple histogram can also give you an overview as to whether your residuals are normally distributed or maybe fit better to an alternative distribution type (in our case a poisson distribution). It can also be used to spot outliers seen as spikes at the tails of the histogram, however in our case we don't seem to be having any, perfect!
+
+- **Response vs fitted values:**
+
+Very similar to the res v lin pred plot, this can also be used to check for homoscedasticity.
+
+
+This should give you a quick overview over the basics of using GAMs in R with the aid of the mgcv package. As mentioned before, a much more detailed description of both basic but also the more advanced tools included in this package can be obtained from the help() function in R and also online cheatsheets on the package. For a start though, these functions should help you suit into this new area of modeling, and prepare you for the case studies in which you can test your knowledge learned on GAMs later!
+
+
+
+
+
+
+
+

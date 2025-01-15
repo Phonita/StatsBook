@@ -1,0 +1,29 @@
+---
+title: "Structure of GAMs"
+output: html_document
+date: "2025-01-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## **The structure of GAMs**
+
+The overall structure of GAMs will remind you of that of GLMs, with some little twists.
+
+
+![Standard formula to depict a Generalized additive model](Str.png)
+
+
+
+An important factor is once again the usage of a link function (g). It is needed to transform or “link” non-linear responses with your linear predictor variable. This is often necessary in ecology, as many common types of responses are either:
+
+-	Count data (can only be positive, whole numbers)
+-	Rates, like mortality, growth, grazing (only ranging between 0 and 1)
+-	Binomial data, for example to check for occurrences of a species (can only be 0 or 1)
+
+These link functions connect our predictor variables (X) to our expected response (E[Y]). To allow for non-linear relationships between predictor and response, which isn’t possible for GLMs, a smooth function (f) is applied to every predictor.
+The smooth functions can vary in their techniques. Some use so-called splines, others use local regressions. Degrees of freedom are key for using smoothing functions, as they regulate the number of knots that the smoothing functions have to curve around and between the datapoints.
+
+As with many other models, the structure of a GAM also contains a term displaying the residual error. This error displays the variation in the data that can't be explained by the model itself. The way that the error is distributed will hinge on the type of data you're looking at, and thus the type of link function you need.
