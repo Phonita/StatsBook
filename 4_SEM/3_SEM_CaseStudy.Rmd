@@ -1,0 +1,169 @@
+---
+output:
+  html_document:
+    latex_engine: xelatex
+documentclass: book
+mainfont: Arial
+monospace: Courier New
+linestretch: 1.5
+fontsize: 12pt
+geometry:
+- top=1in
+- bottom=1in
+- left=1in
+- right=1in
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+rm(list=ls())
+```
+
+# 4.3 Getting more practical: Applying SEM in R with piecewiseSEM
+
+## 4.3.1 The five steps of SEM
+
+Performing Structural Equation Modeling can be broken down into five steps:
+
+1.  **Model Specification**: This step goes back to the core idea of SEM: defining the causal relationships among your variables based on what you know.
+
+2.  **Model Identification**: Here, you check how many degrees of freedom you have. In other words, you determine if your model is over-identified, just-identified, or under-identified. You can only estimate the model coefficients if your model is just-identified or over-identified. Your computer program will likely throw a fit if your model is under-identified. 
+
+3.  **Parameter Estimation**: Your computer program executes this step and lists the coefficient estimates in your model summary. However, in the previous chapter, you have already learned about the approach of second-generation SEM and piecewise SEM to estimate the coefficients.
+
+4.  **Model Evaluation**: Your computer program kindly provides you with a goodness-of-fit measure of your model within the model summary. 
+
+5.  **Model Modification**: If your model does not fit the observed data well, you might consider modifying your model. You could see if adding or removing pathways between variables improves the model fit. However, be cautious! While adding and removing relationships among variables may be customary in other statistical methods, it does not conform to the SEM philosophy (only if you do exploratory SEM). SEM emphasizes the careful construction of a pre-assumed model based on your knowledge. If your model does not hold up, take a moment to reflect on whether the changes you are considering align with your expectations about how the system works.
+
+## 4.3.2 Case Study on tree survival
+
+The open-source package piecewiseSEM allows us to conduct piecewise SEM, also known as Confirmatory Path Analysis, in R (Lefcheck, 2016). This package includes three data frames suitable for experimenting with piecewise SEM techniques.
+
+In this example, we will work with data from Shipley (2009), which examines tree survival. This dataset originates from a hypothetical study designed to demonstrate how piecewise SEM can effectively integrate generalized linear models when dealing with complexities such as random effects, repeated measures, and diverse distributions. The research investigates tree survival across 20 distinct sites located at varying latitudes. At each site, five individual trees are monitored, creating a multi-level nested structure: variation occurs between sites, between individual trees within sites, and between years for each tree. Let's have a closer look at the dataset.
+
+```{r libraries, warning = FALSE, message = FALSE}
+library(tidyverse) # ggplot, dplyr, & co.
+library(piecewiseSEM) # for piecewise SEM 
+library(nlme) # non-linear mixed effects
+library(lme4) # linear mixed effects
+library(ggnetwork) # for plotting network graphs with nodes and edges
+library(network)
+library(semPlot)
+```
+
+```{r getting overview of shipley}
+summary(shipley) # shipley is the dataset containing the data from Shipley (2009)
+```
+
+This data frame contains nine variables:
+
+-   **site**: Site of observation
+-   **tree**: Individual tree of observation
+-   **lat**: Latitude
+-   **year**: Year of observation
+-   **Date**: Julian date of first bud burst
+-   **DD**: Cumulative degree days until first bud burst
+-   **Growth**: Increase in stem diameter
+-   **Survival**: Proportional survival
+-   **Live**: Alive(1) or dead(0)
+
+Notice how the *Survival* variable is proportional, whereas the *Life* variable is binomial, representing an outcome of either alive or dead. Additionally, the median and mean values of the variables *lat*, *Date*, *DD*, *Growth*, and *Survival* suggest that these variables exhibit a relatively normal distribution.
+
+### Model specification
+
+Let's assume that you have extensive knowledge about tree growth and survival. Thus, you are confident that latitude influences cumulative degree days. Degree days are a measure to estimate the amount of heat accumulated over a specific period, facilitating plant growth and development. In your case, these cumulative degree days play a crucial role in determining the date of bud burst, which impacts tree growth and ultimately influences whether a tree survives or dies in the upcoming growing season. Based on this understanding, you formulate the following model:
+
+![Causal relationships between latitude and tree survival](Figures_Memes/‎Figure_4.jpeg "The pre-assumed model with the causal relationships between the variables of this case study.")
+
+### Model identification
+
+In this example, you have data from five observed variables, which provides you with five known pieces of information (n = 5). To estimate the four relationships among these variables, you also require the variances of each variable, resulting in five additional pieces of information. Accordingly, you have nine unknowns (t = 9). According to the t-rule, since the number of known pieces of information exceeds the unknowns, your model is considered over-identified, allowing you to solve it.
+
+$$
+t≤\frac{n(n+1)}2
+$$
+
+$$
+9≤\frac{5(5+1)}2
+$$
+
+$$
+9≤15
+$$
+
+### Parameter Estimation and Model Evaluation
+
+You can convert the path diagram into a corresponding set of equations or a generalized linear mixed model formula (*refer to Chapter 1*) to be used as arguments in the *psem* function. Note that the first three formulas represent linear mixed models, incorporating the nested structure of the experiment as a random effect (indicated as \~ 1 \| site/tree/year). The last formula is a generalized linear mixed model suited for a binomial distribution, aligning with the binary nature of the Live variable (either dead or alive).
+
+Once you have formulated your equations and passed those to the *psem* function, you can extract the coefficient estimates and goodness-of-fit measures from the model summary.
+
+```{r psem, warning=FALSE, message=FALSE}
+shipley_psem <- psem(
+  lme(DD ~ lat, 
+      random = ~ 1 | site/tree/year, 
+      na.action = na.omit, 
+      data = shipley),
+  
+  lme(Date ~ DD, 
+      random = ~ 1 | site/tree/year, 
+      na.action = na.omit, 
+      data = shipley),
+  
+  lme(Growth ~ Date, 
+      random = ~ 1 | site/tree/year, 
+      na.action = na.omit, 
+      data = shipley),
+  
+  glmer(Live ~ Growth + (1|site/tree/year),
+        family = binomial(link = "logit"), 
+        data = shipley)
+)
+
+#call model summary
+summary(shipley_psem, .progressBar = F)
+```
+
+The summary presents the results of the Structural Equation Model (SEM) in several tables.
+
+1.  **Causal Relationships:**\
+    The first section details the causal relationships defined in your model, including the prediction of degree days by latitude (DD \~ lat) and the influence of the date of bud burst on tree growth (Growth \~ Date).\
+
+2.  **AIC value:\
+    **The second table reports the AIC value needed for comparing different models to each other. Lower AIC values indicate a better-fitting model relative to others. Your model has an AIC value of 21753.782.\
+
+3.  **Tests of Directed Separation:\
+    **The third part evaluates all independence claims of the model, assessing all relationships not explicitly specified in it. In other words, you make an independence claim when you do not connect two variables with an arrow. P-values greater than 0.05 in this table support the independence claims, suggesting that the unconnected variables do not exert influence over one another. In your case, the d-separation test supports all independence claims.\
+
+4.  **Goodness-of-Fit Measures:** The following section contains global goodness-of-fit metrics. The Fisher's C statistic is 11.54 with 12 degrees of freedom and a p-value of 0.483, which indicates a good overall fit of the model to the observed data. Remember: you do not reject the model if the p-value is greater than 0.05.
+
+    > The model does not report a $\chi^2$ statistic, and issues a warning about convergence. This warning is \<due to one or more submodels not converging, which results in invalid likelihood estimates and an NA for the $\chi^2$ statistic.
+
+5.  **Coefficient Estimates:** This table summarizes the coefficient estimates for the predictors. For instance, latitude negatively affects degree days, estimated at -0.8 ± 0.12, which is statistically significant. The standardized estimates scale the effect of each predictor relative to the scale of the response variable, providing more precise insights into the strength of relationships between variables.\
+
+6.  **R-squared Values:** Lastly, the individual R-squared values reveal how well the predictors account for the variance in each response variable. For example, the tree growth (*Growth*) explains 78% of the variance of tree survival (*Life*).
+
+```{r fig.cap="**Figure x**:Path Diagram with standard coefficient estimates of the case study", fig.align='center'}
+edges <- coefs(shipley_psem) %>%
+  select(Std.Estimate) %>%
+  mutate(color = if_else(Std.Estimate < 0, 
+                         'brown', 
+                         'black')) %>%
+  mutate(width = if_else(Std.Estimate < 0,
+                         -3*Std.Estimate,
+                         3*Std.Estimate))
+
+plot(shipley_psem, layout = "tree", 
+     edge_attrs = data.frame(style = "solid", 
+                             penwidth = edges$width,
+                             color = edges$color,
+                             labelfontname = "Arial",
+                             fontsize = 8))
+```
+
+```{r include=FALSE}
+# output of plot(SEM) is in html and will not render in pdf. I need to think about this. 
+
+```
