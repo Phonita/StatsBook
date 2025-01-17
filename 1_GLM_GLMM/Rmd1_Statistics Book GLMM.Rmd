@@ -1,0 +1,142 @@
+---
+title: "Statistics Book GLMM"
+author: "Josphine Buntrock"
+date: "2024-12-26"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# GLMM
+
+### [Structure]{.underline}
+
+When you feel like your data is a little bit more complex than GLMs can handle, GLMMs (Generalized Linear Mixed Models) might be the way to go. They are ideal, when you have multiple levels of data *(e.g. individuals nested within groups, measurements repeated over time)* and you need to analyse complex data structures, such as those **involving fixed effects as well as random effects or hierarchical data.**
+
+**-\> aka MIXED models**
+
+**Fixed Effects:** These are your primary variables of interest. They are considered constant across the entire population or data set and describe the systematic relationships between predictors and response variables.
+
+**Random Effects:** Are a key component that accounts for variation in the data that is not explained by the fixed effects. Therefore, it captures variability arising from the data's grouping or clustering. Random effects are often used to model variation at different levels of a hierarchy. *(e.g. subject ID, sample sites, grow media or time points)* -\> They are therefore tools for modelling structured, unexplained variability in your data. Good random effects have 3 or more levels and at least 5 observations to be statistically stable (if you are going for that).
+
+**Hierarchical Data:** Data that is organized into nested levels, groups or clusters. Creates dependency among observations within the same group.
+
+By including random factors, the GLMM overcomes pseudo-replication *(observations are treated as independent in statistical analyses, but they are actually correlated due to shared conditions or grouping)* and heteroscedastic variance *(variability of residuals is not constant across all levels of an independent variable)*, avoiding overfitting your model, while allowing for variability.
+
+Another quick recap: random intercepts & random slopes
+
+**Random intercept:** A random intercept in a mixed-effects model allows each level of a grouping variable (e.g. sites) to have its own baseline value for the response variable.
+
+-\> variability in the baseline response
+
+**Random slope:** A random slope in a mixed-effects model allows the effect of a predictor (e.g. a treatment or covariate) to vary across levels of a grouping variable.
+
+-\> variability in the relationship between a predictor and the response
+
+You can use different combinations of random or fixed, intercepts and slopes to allow flexibility in your modeling variability within and across groups. It always depends on the structure of your data and the hypotheses you're testing.
+
+*Extra info (for the math nerds) :*
+
+*The general form of the model (in matrix notation) is*
+
+$$
+    y = X\beta + Zu + \varepsilon
+$$
+
+$y$ *is a* $N*1$ *vector, the outcome variable;*
+
+$x$ *is a* $N*p$ *matrix of the* $p$ *fixed-effects (predictor variables);*
+
+$\beta$ *is a* $p*1$ *vector of the fixed-effects regression coefficients;*
+
+$z$ *is a* $N*q$ *matrix for the* $q$ *random effects (the random complement to the fixed* $X$*);*
+
+$u$ *is a* $q∗1$ *vector of the random effects (the random complement to the fixed* $\beta$*);*
+
+$\varepsilon$ *is a* $N*1$ *vector of the residuals (part of* $q$ *that is not explained by the model* $X\beta + Zu$
+
+### [Application + Packages]{.underline}
+
+The packages you may need:
+
+`lme4` : Most commonly used package. Provides the `glmer()` function.
+
+`glmmTMB` : More flexible, supports zero-inflation *situations where the data has more zeros than expected under the assumed distribution (e.g. Poisson or binomial)* and complex random structures. Slightly slower than `lme4`
+
+`DHARMa` : provides a comprehensive suite of tests and plots to assess the underlying assumptions of GLMMs, such as the distribution of residuals, overdispersion, and zero inflation.
+
+How the code syntax looks like:
+
+`(response ~ fixed_effects + (1 | random_effect), family = distribution)`
+
+`response`: the dependent variable,
+
+`fixed_effects`: variables with coefficients that apply globally (one ore more`+`, possibly with interaction`*`),
+
+`random_effects`: group-level effects that vary by group factor (one ore more`+`). Might be also nested `:` into a hierarchical cluster (not always needed/provided),
+
+`family`: the distribution of the response variable (e.g. binomial, poisson, gaussian).
+
+Variations of the code syntax:
+
+`(1 | random_effect)` like in the example: allows each group (site) to have its own intercept,
+
+`(random effect | grouping factor)` allows the effect of a predictor to vary by group,
+
+`(1 + random effect | grouping factor)` models both the intercept and the slope of a predictor as random effects,
+
+`(1 | grouping factor / nested grouping factor)` specifies random effects for grouping factor and and nested random effects for nested grouping factor in grouping factor.
+
+### [Assumptions]{.underline}
+
+About the Data:
+
+-   Random sampling
+
+-   Independence
+
+About the Response variable:
+
+-   Appropriate response variable & link function
+
+About the Fixed Effects:
+
+-   No (perfect) multicolinearity
+
+-   **Linear Relationship on the scale of the link function**
+
+About the Random Effects:
+
+-   **Normal distribution of the random effects**
+
+-   Correct hierarchical structure
+
+About the Residuals:
+
+-   Appropriate estimation of variance
+
+-   Independence
+
+### [Model selection]{.underline}
+
+When selecting the best fitting model for your data and analysis, there are several methods you can choose from:
+
+**AIC** : Measures, how well your Model balances fit and complexity and prevents you from overfitting. Lower AIC values indicate a better model. Be careful: the AIC does not directly measure how well a model explains the data.
+
+**Maximum likelihood** : Is the probability of observing your data given certain values for the model's parameters. It is useful for all model parameters (fixed and random effects). A higher log-likelihood value suggests a better-fitting model.
+
+**Pseudo-R²** ^:^ Measures the proportion of variance in the dependent variable that is explained by the model. It is a common metric in regression models to evaluate how well the predictors explain the outcome. In linear models R² is used, for GLMMs it's Pseudo-R².
+
+As a general rule, your model selection workflow is the best, if you start with the AIC, proceed with maximum likelihood and finally look at Pseudo-R².
+
+Sources:
+
+**Zuur**, A. F., Ieno, E. N., Walker, N. J., Saveliev, A. A., & Smith, G. M. (2009). *Mixed effects models and extensions in ecology with R* (Vol. 574, p. 574). New York: springer.
+
+<https://bookdown.org/steve_midway/DAR/random-effects.html#types-of-models-with-random-effects>
+
+<https://www.bas.uni-muenchen.de/~jmh/lehre/sem/ss10/stat/glmm.pdf>
+
+### [Case Study GLMM]{.underline}
