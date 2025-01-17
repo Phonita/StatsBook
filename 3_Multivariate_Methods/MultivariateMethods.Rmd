@@ -1,0 +1,111 @@
+---
+title: "MultivariateMethods"
+output: html_document
+date: "2024-12-17"
+---
+
+# Redundancy Analysis (RDA) -- Understanding Influences on Data Patterns
+
+### Introduction
+
+Imagine you're again at the grand dinner buffet, but this time you're not just interested in observing the clustering of guests based on their food choices. Instead, you're keen to understand how specific ingredients or spices influence the overall flavor profile of the dishes on each guest's plate. This is where Redundancy Analysis (RDA) comes into play.
+
+### Objective and Application
+
+RDA is like having the ability to discern which ingredients on a buffet line are most responsible for the flavors that people seem to enjoy the most. While your earlier buffet observations helped identify who groups together based on what they like, RDA helps determine how specific elements---let's say a particular herb or spice---impart distinct flavors across different dishes. In practical terms, just as RDA is commonly used in ecological studies to examine the relationship between environmental factors and species compositions, in our buffet scenario, it is akin to understanding how certain spices (environmental factors) influence the overall taste experience of different guests (species compositions).
+
+### Technique Overview
+
+RDA is similar to a special magnifying glass that zeroes in on the contribution of specific ingredients within the dishes. Just as you might focus your attention on the effect of a specific spice that's added to multiple dishes, RDA constrains the pattern-finding process to those patterns you can link to known factors. It maximizes the understanding of how much of the variance in flavor (or data) is influenced by specific explanatory ingredients (or variables).
+
+### How Does RDA Work?
+
+To put RDA into perspective with your buffet, think of it this way: While PCA would allow you to explore all possible flavors experienced by guests, including those that arise from unexpected ingredient combinations, RDA focuses on identifying flavor patterns specifically attributable to a known influence, like a spice prominently used in the kitchen. It's like analyzing the buffet while consciously examining which dishes have been seasoned with a particular spice to understand its impact on the overall dining experience.
+
+### The Mathematics Behind Redundancy Analysis
+
+RDA leverages mathematical techniques from both Principal Component Analysis (PCA) and regression analysis to uncover relationships between datasets. The process begins by representing the dependent variables (the diverse flavors of dishes at the buffet) and explanatory variables (like specific spices or herbs) in a multivariate space. Mathematically, RDA performs a multivariate multiple regression of the dependent variables onto the explanatory variables, akin to understanding how much each spice contributes to the overall flavor profile. The regression results are then subjected to a principal component-like transformation, allowing RDA to capture the maximum variance explained by the explanatory variables. This approach constrains the transformation to focus on variance that can be directly attributed to the known influences, effectively creating new axes or components that summarize the influence of these variables. The mathematical elegance of RDA lies in its capacity to quantify and maximize the portion of variance in the dataset that is explained by specific factors, offering a structured way to attribute patterns in the data to identifiable causes.
+
+### Conclusion
+
+RDA essentially helps magnify our understanding of flavor dynamics (or data variance) by spotlighting contributions from these known spices (or influences). It aids in understanding how much of the unique guest experiences at the buffet can be attributed to the intentional use of particular ingredients.
+
+# Correspondence Analysis (CA) -- Unveiling Dining Patterns
+
+### Introduction
+
+Picture yourself at a bustling dinner buffet, surrounded by a variety of dishes and ingredients. However, instead of merely savoring the dishes---as in the flavor-centric PCA/RDA analogy---your focus shifts to the selection habits of diners. Your objective is to observe how guests interact with the buffet and which dishes are commonly chosen together, revealing fascinating patterns about preferences.
+
+### Purpose
+
+Think of Correspondence Analysis (CA) as your tool for understanding how guests fill their plates at the buffet. Each plate (category) represents different combinations of dishes (data points in a contingency table), and CA helps identify which dishes tend to be served together more frequently. It's like deciphering the popularity of certain dish pairings based on how often they're selected in tandem.
+
+### Visualization
+
+Imagine you are examining a large board showcasing all the plates and their selections at the buffet. In this analogy, a scatter plot represents various combinations of dishes across plates, illustrating which ones are often picked together. Dishes appearing close together on this board suggest they share common popularity or preference profiles among the guests.
+
+### Data Requirement
+
+The essential input for CA is the buffet log---a detailed account of how often each dish is chosen by guests. This is akin to a contingency table containing counts or frequencies, serving as the foundation for analyzing selection patterns.
+
+### Dimensionality Reduction
+
+Instead of being overwhelmed by the myriad combinations of dishes, CA offers a streamlined perspective. It distills the dominant patterns of dish pairings, simplifying the complex data into an easily digestible format that reveals clear preferences among diners.
+
+### Interpretation
+
+On our buffet board, dishes or categories appearing close to each other indicate frequently paired selections, offering insights into dining habits. Just like pasta and garlic bread often finding themselves together on plates, categories that cluster in CA are commonly associated in the data, suggesting habitual co-selection by guests.
+
+### Applications
+
+Observing dining patterns provides valuable insights into food pairing preferences, guiding future meal planning. Similarly, CA is a versatile tool applicable beyond dining, used to understand and visualize associations in fields like market research or ecology. Assumptions This method operates under the assumption that you're evaluating tally marks from the buffet log, capturing the frequency of dish combinations without delving into continuous measurements---mirroring the frequency data handling inherent in CA.
+
+### The Mathematics Behind Correspondence Analysis
+
+Mathematically, Correspondence Analysis is built on the framework of contingency tables, focusing on the relationships between rows and columns (akin to dishes and diners). The method involves transforming the frequency data into a chi-square distance matrix---a statistical technique that evaluates the association between categorical variables. Through singular value decomposition, CA simplifies this complex matrix into principal dimensions, much like identifying the most influential axes on our buffet board. Each dimension reflects the degree to which specific dish combinations dominate guest selections. This transformation allows CA to create a visual map of relationships in a reduced two-dimensional space, providing an intuitive representation of the data and highlighting key patterns for further interpretation.
+
+### Conclusion
+
+In summary, Correspondence Analysis is akin to documenting and analyzing guest choices at a buffet, aiming to discover frequent dish pairings. By translating these patterns into a two-dimensional space, CA simplifies and visualizes complex categorical data for better comprehension and decision-making.
+
+# Discriminant Analysis -- Classifying Guests into Theme Parties
+
+### Introduction
+
+Imagine you're back at the grand buffet, but this time, you have a new challenge: determining which specific theme party each guest belongs to based on what's on their plate. Unlike observing natural groupings, you already have predefined categories---such as vegetarian, vegan, gluten-free, or meat lovers---and your task is to classify each guest accordingly.
+
+### Purpose
+
+Discriminant Analysis is akin to being the buffet manager tasked with assigning guests to specific theme parties based on their food selections. You know the existing themes, and your goal is to discern which guest fits into which group based on their chosen dishes.
+
+### Classification
+
+Each plate serves as a set of clues about the likely group or theme to which a guest belongs. Discriminant Analysis uses these clues, or features, to classify guests into predefined groups. The goal is to identify which food choices are the most indicative of each category.
+
+### Data Requirement
+
+You begin with a dataset where some guests' group memberships are already known. This constitutes your training data, allowing you to learn and establish the typical characteristics of each group's plates, similar to understanding key dishes associated with each theme.
+
+### Visualization
+
+Imagine a map of the dining area segmented into sections for each theme party. Statistically, this can be visualized as a decision boundary on a plot, illustrating where guests with different preferences are likely to align.
+
+### Dimensionality and Interpretation
+
+Just like focusing on distinctive dishes---such as quinoa salads for vegans---Discriminant Analysis seeks to pinpoint the features that most distinctly differentiate between groups. This reduces complexity by concentrating on the most salient variables that aid in classification.
+
+### Applications
+
+Understanding these classifications can help tailor services for each theme or predict future guest behavior. Similarly, Discriminant Analysis is employed in marketing, medicine, and finance to categorize data into specific groups based on known examples, enhancing decision-making.
+
+### Assumptions
+
+This method relies on the assumption that distinctions between groups are pronounced enough to be identified using the selected features, much like assuming that guests have sufficiently distinct plates to be assigned to the appropriate theme party.
+
+### The Mathematics Behind Discriminant Analysis
+
+Mathematically, Discriminant Analysis involves developing a model that uses linear combinations of the input features to classify data points into predefined categories. The most common method, Linear Discriminant Analysis (LDA), works by finding a linear combination of features that best separates two or more classes. This is achieved by maximizing the ratio of between-class variance to the within-class variance, effectively drawing decision boundaries that optimally separate the categories. The process entails calculating the means and variances of each group and then constructing a discriminant function---a mathematical equation used to score data points and classify them into the appropriate group. This approach ensures that guests (or data points) are accurately assigned to the correct theme party, based on the learned characteristics of each category.
+
+### Conclusion
+
+In summary, Discriminant Analysis at the buffet involves determining which pre-set theme party each guest fits into, guided by the contents of their plate. It uses established group characteristics to accurately classify new observations, shaping coherent decisions based on known patterns.
