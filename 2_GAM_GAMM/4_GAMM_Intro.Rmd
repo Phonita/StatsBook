@@ -1,0 +1,40 @@
+---
+title: "GAMM Intro"
+output: html_document
+date: "2025-01-20"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## **Introduction to Generalized Additive Mixed Effect Models (GAMMs)**
+
+Perhaps you need your model to be even more flexible than the regular GAM. Maybe you need to account for random effects within your dataset, like including explanatory categorical variables in the same model as numerical relationships. Including random effects in your model can be very important, depending on what you are looking at. This is where the GAMM becomes important.
+
+Let’s take a look into why these random effects would be important, scientifically speaking. A really common, important, undervalued example of random effects in your dataset would be accounting for space and time. In statistics, we call this spatial (accounting for space) and temporal (accounting for time) autocorrelation. For an example, let’s say you are measuring abundance of a certain planktivorous fish species in comparison to temperature and food availability across different neighboring reefs in the Caribbean. You are measuring some fixed effects, like number of individuals per reef and copepod abundances in sampling nets as a proxy for food concentration. You will be going out every day for 3 months (March, April, May) to sample – 1 sample per day. Each of the reefs will have the same sample time each day. Sounds great right? 
+
+But, if you were to disregard the random effects, or take each fish as independent of each other, each reef as independent, and each day as independent, there might be some glaring issues in your analysis. Why would taking these variables as independent be problematic? They are actual habitats and organisms, not just statistical items, so they do not behave as straightforward as simple stats would like. For example, it could be that the reefs closer to one another have more similar water chemistry than the ones farther out. If you were to take these reefs as independent of one another, this would be spatial autocorrelation. 
+
+There is also day to day variability that needs to be accounted for. Technically speaking, the sampling during one day is dependent on the days before. It is not that the communities are independently formed each day, but there are events like blooms of certain phytoplankton, migration seasons, nutrient depletions that last days, weeks, or even months. In that case, you have to account for the temporal autocorrelation.
+
+Diving just a bit deeper, you also have to consider the subject; in our case, that is the fish. One can think about the behavior of the fish – do they school? Are they residing in the area for a long time? Thinking about your subject can introduce both temporal and spatial correlation, so caution is needed when deciding on what would constitute as a random effect. Remember, ecosystems are not independent, and this needs to be accounted for!
+
+GAMM, or Generalized Additive Mixed Modeling, is a crucial update to the traditional GAM that was explained before. This is due to an added term in the model equation, which then incorporates the random effects that you wish to add to the investigation or prediction that you are creating with your model.
+
+![GAMM equation, with terms explained](/home/janco/DataScience_iMARSYS_WiSe2425/Molly_Showers/GAMM_equation.png) 
+
+	
+	
+Here, the added term is the Zu, which accounts for the random effects. Everything else in the GAMM model equation is the same at the GAM model, including the link function, the smoothing function(s), the fixed intercept, and the residual error. Again, there is freedom in adding the smooth splines, and now freedom with the random effects as well. 
+
+In R, the equation using the mgcv package looks like this:
+
+    GAMM <- gam(Response ~ s(Predictor 1)+s(Predictor 2)+(Random Effect, bs = "re")
+
+
+Notice that the random effects are treated as such by using bs = "re", or the baseline spline is denoted as a grouped random effect. There are other types of random effects, like factor random effects, but for the sake of this book, we will keep it to the grouped ones.
+
+
+In this format, it is relatively clear to see what are your explanatory variables (predictors), the response, the smoothing effects (s) and the random effect. There is not too much of a difference between GAM and GAMM structurally, but it allows for greater freedom when handling complex (perhaps ecological) datasets. 
+
