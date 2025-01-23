@@ -52,23 +52,24 @@ Another important part is the "family" argument in the code. It specifies the ty
 ```{r}
 
 
-model2 <- gam(Fish_Count ~ s(Temperature,k=3),data = Count_data)
+model2 <- gam(Fish_Count ~ s(Temperature,k=3) + s(Salinity,k=3),data = Count_data)
 
 # p-value for Temperature = 0.879
 
-model3 <- gam(Fish_Count ~ s(Temperature,k=12),data = Count_data)
+model3 <- gam(Fish_Count ~ s(Temperature,k=12) + s(Salinity,k=12),data = Count_data)
 
 # p-value for Temperature = 0.00386 **
 
+par(mfrow = c(2, 2)) 
 
 
-plot(model2,main = "Effect of T on Fish Count (k = 3)",ylab = "Partial effect",cex.lab = 0.8, cex.main = 1.0,shade = T,col= "#72BAAA",lwd = 2)
+plot(model2,main = "Effects on Fish Count (k = 3)",ylab = "Partial effect",cex.lab = 0.8, cex.main = 1.0,shade = T,col= "#72BAAA",lwd = 2)
 
-plot(model3,main = "Effect of T on Fish Count (k = 12)", ylab = "Partial effect",cex.lab = 0.8, cex.main = 1.0,shade = T,col= "#72BAAA", lwd = 2)
+plot(model3,main = "Effects on Fish Count (k = 12)", ylab = "Partial effect",cex.lab = 0.8, cex.main = 1.0,shade = T,col= "#72BAAA", lwd = 2)
 
 
 ```
-**Fig. 1+2:** Plot of the partial effect of temperature on fish count over temperature. Solid line indicates the effect derived from the model, shaded area shows the 95% confidence interval. Small lines on the x-axis display the distribution of the data points in terms of temperature. The number of knots used for the smoothing function was 3 for Fig. 1 and 12 for Fig. 2.
+**Fig. 1-4:** Plot of the partial effect of temperature on fish count over temperature. Solid line indicates the effect derived from the model, shaded area shows the 95% confidence interval. Small lines on the x-axis display the distribution of the data points in terms of temperature or salinity. The upper row shows the partial effects of temperature and salinity with knots set to three, the lower row with knots set to twelve.
 
 
 
@@ -85,10 +86,10 @@ Lastly, to get an overview of the model output, you can use the summary command,
 ```{r}
 summary(model2)
 
-plot(model2,residuals = T,pch=16,ylab = "Partial effect",main = "Effect of Temperature on Fish Count with residuals",cex.lab = 0.8, cex.main = 1.0,cex = 0.6, col= "#72BAAA",shade = T,lwd= 2)
+plot(model2,residuals = T,pch=16,ylab = "Partial effect",main = "Effects on Fish Count with residuals",cex.lab = 0.8, cex.main = 1.0,cex = 0.6, col= "#72BAAA",shade = T,lwd= 2)
 
 ```
-**Fig. 3:** Plot of the partial effect of temperature on fish count over temperature. Solid line indicates the effect derived from the model, shaded area shows the 95% confidence interval. Points in the plot indicate the residuals for the data. Small lines on the x-axis display the distribution of the data points in terms of temperature.
+**Fig. 5+6:** Plots of the partial effect of predictors on fish count over temperature and salinity. Solid line indicates the effect derived from the model, shaded area shows the 95% confidence interval. Points in the plot indicate the residuals for the data. Small lines on the x-axis display the distribution of the data points in terms of temperature (Fig. 5) and salinity (Fig. 6).
 
 
 The outcome of the summary will let you know about your models degrees of freedom, the model fit statistics as well as the significance of all your smoothing terms for the different predictors. You should know most of this output structure from previous models you have run like simple linear models or GLMs.
