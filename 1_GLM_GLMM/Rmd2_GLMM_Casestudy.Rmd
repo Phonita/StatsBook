@@ -1,0 +1,319 @@
+---
+title: "GLMM Case Study"
+author: "Josephine Buntrock"
+date: "2025-01-07"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Case Study GLMM
+
+### First:
+
+To get started with our case study, first we have to **load all Packages** required.
+
+```{r}
+
+# setwd()        
+# please make sure you are in the right working directory 
+
+#install.packages("glmmTMB")       -> and the others if not already
+
+
+library(tidyverse)   # includes packages like:
+                     # tidyr     -> always good to wrangle your data if needed
+                     # dplyr()   -> to manipulate data when necessary 
+                     # ggplot2() -> always unmatched in plot-making abilities                        <3
+
+
+library(glmmTMB)     # in this case we'll take the more flexible route
+                     # (please have a look if other functions by different 
+                     # packages might suite you better -> read more above)
+
+
+library(DHARMa)      # used to perform diagnostics for generalized linear                            mixed models
+library(MuMIn)       # for some more diagnostics
+library(car)         # for even more diagnostics
+
+
+
+
+```
+
+### Next:
+
+The data... tadaa what a surprise, we'll use the always loved **Penguin data set**...
+
+\<3
+
+![](images/il_570xN.944066250_jzpw.jpg.avif){width="315"}
+
+```{r}
+
+peng <- read_csv("penguins.csv")
+
+# get to know your data
+
+glimpse(peng)        # to see column names and data types etc.
+summary(peng)        # to get an Statistical overview of the columns 
+                     # depending on the datatype (mean, max count, etc.)
+
+```
+
+### Now:
+
+let's have a **look at our data**... yes, always look at your data.
+
+**Figure. 1**
+
+```{r}
+
+# just a simple histogram, nothing fancy 
+
+ggplot(peng, aes(x = body_mass_g)) +
+  geom_histogram(fill = "#438173") +
+  labs(x = "Body Mass (g)", 
+       y = "Ocurrence",  
+       title = "Distribution of the penguins weight") +
+  theme(axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 8),
+        plot.title = element_text(size = 10))+
+  scale_x_continuous() +
+  theme_minimal()
+  
+ 
+
+```
+
+As you can see, it is a Log-Normal (skewed right) *Most values are clustered near the lower end, with a long tail on the right* distribution. This is important to know, to set up the model, as it is one of the arguments in the syntax. Log-Normal distributions are common in biological data, especially when the data are positively skewed and consist of non-negative continuous values. When Log-transformed they resemble normally distributed data.
+
+And just a quick look at the body mass by sex divided into the three islands. (this might become important later when designing the model.)
+
+**Figure.2**
+
+```{r}
+ggplot(peng, aes(y = body_mass_g, x = sex, colour = species))+ 
+  geom_jitter() +
+  facet_wrap(~island)+ 
+  labs(x = "Sex", 
+       y = "Body mass (g)",  
+       title = "Body mass by sex and species") +
+  theme(axis.title.x = element_text(size = 8),
+        axis.title.y = element_text(size = 8),
+        plot.title = element_text(size = 10))+
+  scale_color_manual(values = c("Adelie" = "#B99966", 
+                                "Chinstrap" = "#5B9D8F",  
+                                "Gentoo" = "#39577E"))+
+  theme_minimal()
+ 
+```
+
+### Then:
+
+Its time to to code our **first model**. Juhuu let's try it out!
+
+```{r}
+
+model1<- glmmTMB(data = peng, body_mass_g ~ sex + (1|island), family = gaussian()) 
+# don't forget to add your data
+
+```
+
+Here I put the penguins sex as my main fixed effect that influences the body mass. I used island as a random effect and allowed each one to have its own intercept. this is just a little experiment and tryout so you get to know the syntax. We'll talk more about the hypothesis to be tested later.
+
+### Stop:
+
+Let's think about what the **output** means.
+
+```{r}
+
+summary(model1)
+
+```
+
+So first, the most obvious thing: Male penguins are significantly heavier than female. The output for the fixed effects gives us the models estimates for the intercept. In our case, that would be the female penguins body mass (3713.5g). The model then uses this as a reference point to give us the estimates for the male penguins (+ 674.4 = 4387.9g). Positive output = males are heavier than females.
+
+But there is so much more information to look at:
+
+In the section for the random effects, the models output gives us the number of observations, but most importantly the identified number of groups. Here: three islands. The island (intercept) gives us the mean variance (variability) between the islands. If you compare the residuals (how different the islands are within themselves) to the island (intercept), the relatively small difference in between, indicates that a not insignificant amount of the variation in the response is explained by the islands. They might provide a difference in feed quality or other factors specific to them.
+
+```{r}
+
+coef(model1) # have a look within the Random effects
+
+```
+
+Here we can look at the coefficients of the random effects in detail. Because this is a random intercept model, you can see each island's individual intercept (female reference) and then the fixed slope (male increase). So again, if you add 674.4 to the model's female estimate you get to the males estimate (here for every island seperate).
+
+### Maybe:
+
+The species might be **another random effect** worth to be looked at??
+
+hint hint should it be fixed?
+
+```{r}
+
+model2<- glmmTMB(data = peng, body_mass_g ~ sex + (1|species), family = gaussian())
+
+summary(model2)
+
+```
+
+Look at the big change in the random effect's species (intercept) vs. residuals!
+
+### Here:
+
+It might be wise to consider **the impact** of this Factor
+
+```{r}
+# some quick math with the effect's species (intercept) vs. residuals
+
+# Model2
+413001+99937  # = 512938
+413001/512938 # = 0.8051675
+
+# Model1
+219172+283880 # = 503052
+219172/503052 # = 0.4356846
+```
+
+If we put Species in the random effects (model2) we can see that it can explain \~ 80% of the dependent response variable that could be one indication that it is more useful integrated into the fixed effects of our model. As comparison, the islands from model1 explains \~ 40%. Still a big percentage but not nearly as much as species. Additionally in a biological context, putting the species as a predictor for the body mass as a random effect might not give you the ideal output.
+
+### So:
+
+We'll adjust the model to be a little more **biologically realistic**.
+
+My thoughts: the main possible predictors are sex, species and island. While the year might fit in with that, the span of three years should not have a big impact on an animal with a much longer lifespan, except if there are other known impacts like feed shortage or predator increase associated with that year. (if you are unsure, these kind of predictors can always be added and evaluated later in the process.)
+
+Out of the three, I decided to put the islands as a random effect. Even though we know, that they explain a not insignificant amount of the variation, in this case I don't want to specifically investigate their direct effect on the body mass but rather treat them as a grouping factor, that influences the body mass as an underlying effect in addition to the species and sex of the penguin.
+
+I keep the model as a random intercept / fixed slope model because (in figure 2) I can see the relationship between the predictors and response variable to be relatively consistent across groups and the groups differ mostly in their average value of the response variable (intercept).
+
+the H~0~ for this Model would be: None of the chosen predictors have a significant effect on the body mass of the penguins.
+
+```{r}
+
+model3<- glmmTMB(data = peng, body_mass_g ~ sex + species + (1|island), family = gaussian())
+
+summary(model3)
+
+```
+
+Looking at these results, we can see that male penguins are still significantly heavier than females (intercept, as we know). But what about the species? Because we adjusted our model, our intercept now includes one more additional information. Not only are female penguins the lightest, but also the Adelie species. The intercept is now defined by the models estimation for **female Adelie penguins.** With that information we can see that, while Gentoo penguins are significantly heavier than Adelie penguins, the Chinstrap's are not.
+
+With that we can reject H~0~, as there are several predictors having a significant effect on the body mass of the penguins
+
+In the section for the random effects, the variance of the Islands dropped substantially, as most of the variance is now explained by the sex and species being fixed effects.
+
+```{r}
+coef(model3)
+```
+
+Again, if you want to have specific information about the intercept (female Adelie) and the slope (weight increase by sex or species) looking at the coefficiants is the most effective.
+
+You could actually go for an interaction ( `*` ) between these, it further reduces variance. Why do we want less variance: a simple additive model might miss the relationship **between** predictors.
+
+Then your model would not only compare the sex or the species on different islands to the body mass but also combine them (for example adding female & male Cinstraps and female & male Gentoo penguins).
+
+```{r}
+ # model4<- glmmTMB(data = peng, body_mass_g ~ sex * species + (1|island), family =       gaussian())
+
+ # summary(model4)
+ # coef(model3)
+```
+
+### Now:
+
+We can come back and check a few more **assumptions**.
+
+Again, while most of the assumptions are checked by visual inspection or logically evaluating your data, some have to be calculated.
+
+```{r}
+# multicolinearity
+fixed_effects_model <- lm(body_mass_g ~ sex + species + island, data = peng)
+vif(fixed_effects_model)
+
+#          GVIF 
+# sex     1.000265 
+# species 3.632668  
+# island  3.632766 
+
+```
+
+By assessing the fixed effects separately using `lm()`, we focus on the part of the model where multicollinearity is most concerning. You can see that a GVIF of 1.00 (sex) confirms a negligible amount collinearity, but also 3.63 (species & islands) indicates only a moderate multicollinearity. All good here :)
+
+```{r}
+
+sim_res <- simulateResiduals(model3)
+plot(sim_res, quantileFunction = "qq")
+
+```
+
+The Plots provided by the DHARMa package, give us loads more information to check the assumptions.
+
+Information from the Q-Q-plot:
+
+Quick recap: a Q-Q-plot compares quantiles of the residuals coming from your model data to quantiles of the residuals from a theoretical distribution (usually normal/Gaussian). When asessing a model that is based on linear regression, this plot is useful to visually inspect, whether your residuals are normally distributed (i.e. following a straight line).
+
+Normal distribution of the Residuals as well as the random effects: The points on the Q-Q plot closely follow the red reference line, indicating that the residuals and random effects are approximately normally distributed. There are no significant deviations from the line, suggesting that they may not be normally distributed.
+
+Kolmogorov-Smirnov-Test: High p-value, there is no evidence that the residuals deviate significantly from the expected distribution. This suggests that our model fits well with respect to the residuals' distribution.
+
+Dispersion Test: A p-value of 0.96 indicates that there is no significant evidence of overdispersion or underdispersion in our model. Dispersion is roughly as expected, meaning that the variance of the residuals is in line with what our model assumes.
+
+Outlier-Test. A p-value of 1 suggests that there are no significant outliers in your data.
+
+Additionally on the right of the Q-Q-plot there are more diagnostics: The within-group deviation from uniformity is not significant. Meaning, that the residuals within each group do not significantly deviate from the expected uniform distribution, which is good news for your model because it meas, that it is adequately capturing the variability within the groups. The Levene-Test is also not significant, indicating that the assumption of homogeneity of variance is met.
+
+All of that is a good indication, that our models assumptions are reasonable.
+
+In case our models data (or any other in the future) violate one or several assumptions, the DHARMa diagnostics would additionally flag in bright red.
+
+### In the end:
+
+Have a look at the **model fit**.
+
+As we established above the best work flow is AIC, maximum likelihood and then Pseudo-R²
+
+Relatively far up in each models output you can find the AIC. Comparing them, it is visible that model3 has the lowest AIC (4787.6), indicating good model fit.
+
+```{r}
+
+# maximum likelihood, comparing model 1 & 3
+anova(model1, model3)
+
+```
+
+Don't be scared by comparing the models with an Anova! It compares the likelihood of two models to predict the most fitting data. Here we can see that model3 has a significantly better fit than model1. So it was worth it to adjust our model.
+
+```{r}
+
+# Pseudo-R²
+
+
+r.squaredGLMM(model1)
+# R²m         R²c
+# 0.1847829   0.5399602
+
+r.squaredGLMM(model3)
+# R²m         R²c
+# 0.8471832   0.8471832
+
+```
+
+Here, the R²m reflects the variance explained by the fixed effects alone and the R²c reflects the variance explained by the entire model, including random effects. What that baically tells us ist that in model3, the fixed effects explain much more variance (84.72%) compared to model1 (18.48%). Unfortunately, because in model3 there is no difference in R²m & R²c, that means the random effects do not have additional explanatory power.
+
+But all in all, comparing our previous models, model3 is the most fitting.Now there would be a bunch more options in adjusting the model to get an even better fit. For example, you could argue, that the inclusion of the islands as a random effect might not be necessary.I am positive, you already have some other options in mind ;) In the following exercise you will be able to try them all out for yourself!!
+
+Don't be scared, try it and maybe even have fun after realizing it's not that bad!
+
+(trust me, sometimes it takes a while but you'll get there \<3 )
+
+Josephine
+
+## ... see you at the GAMs
+
+![](images/Bildschirmfoto%202025-01-07%20um%2023.08.05.png){width="206"}
