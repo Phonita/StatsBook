@@ -1,0 +1,121 @@
+---
+title: "GAMM Case Study"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+
+Here, we are going to use the penguins dataframe to perform a GAMM.
+
+Step 1: Loading the packages we will need.
+```{r}
+library(mgcv) #this is for the GAMM functions
+library(palmerpenguins) #this is for the penguins dataframe
+library(nlme) #this is a necessary package for mgcv
+library(ggplot2) #this is for visualization
+
+data("penguins", package = "palmerpenguins")
+
+```
+
+Step 2: Inspecting the dataframe. 
+
+```{r}
+head(penguins) #this allows us to see the columsn and what kind of data we are working with
+peng<- na.omit(penguins) #here, we have cleaned up the dataframe a bit by removing the NA values
+```
+
+Let's say that you want to look at the possible effect on body mass from bill length, bill depth, and flipper length. However, you also want to see if there is an interaction between bill length and flipper length, to see if there are any coupled effects. Bill length and depth, flipper length, and the combined variable of flipper length and bill length will be our predictors and body mass will be our response variable. For the sake of the example, we will be using smooth splines for both the bill length and depth, and the tensor product interaction smooth spline for our interaction variable. 
+
+Now, we also want to control for some random effects: species and island. We do this because we are not really interested in their direct effect, but we understand that these factors may play a role in the weight of the penguins. Remember, this is the main strength of using a GAMM over a GAM or other model!
+
+
+
+Step 3: Running and Inspecting the GAMM
+
+```{r}
+gamm_model <- gam(
+  body_mass_g ~                              # Response variable
+    s(bill_length_mm, k = 10) +              # Smooth term for bill length
+    s(bill_depth_mm, k = 10) +               # Smooth term for bill depth
+    s(flipper_length_mm, k = 10) +           # Smooth term for flipper length
+    ti(bill_length_mm, flipper_length_mm, k = 10) +  # Interaction between bill and flipper
+    s(species, bs = "re") +                  # Random effect "re" for species
+    s(island, bs = "re"),                    # Random effect "re" for island
+  data = penguins, 
+  method = "REML"                            # Use REML for smoothness selection
+)
+
+
+summary(gamm_model)
+```
+
+Okay, this looks like a lot. But there are a few key terms that help in breaking this down:
+
+1.R-squared (R-sq): 0.855
+  Deviance explained: 86.1%
+  
+  Here, the R-squared value, which exists in a range between 0-1, is quite high in this example. This is an indicator that the model is fitting well to the data input. The deviance explained, which exists in  a range between 0-100%, is also quite high. This means that the model we have created explains roughly   86% of the data variance. This is high for an ecological example. There is no correct "deviance variation" for your model, but is a tool to understand how this is fitting. 
+  
+2. "edf"
+  Edf stands for effective degrees of freedom. As you know that overfitting can be a relevant problem for GAMs and especially GAMM, edf can give you a valuable insight as to whether overfitting has occurred. In our case, the edfs range from 0-6, roughly. The highest edf value is an interaction term between bill length and flipper length. One could imagine that there is some sort of non-linear pattern here, with which an edf value would be appropriate. As a very general rule, you could assume that an edf value of roughly 10-15 or over could be a sign that the model is too flexible and would need to be refitted accordingly. Again, it depends on the nature of your data to determine what is appropriate.
+  
+3. P-Values
+  Now, we can begin to take a look at the p-values, or whether or not the effects that the GAMM model generates from the predictors to the response variable. To start, the parametric p-value is significant (<0.05). This means that the baseline value of the response variable is zero, or when numerical predictors are set to zero and/or all categorical predictors are at their reference level. In the context of this example, this would mean that the body weight is significantly more than zero when bill and flipper dimensions are set to zero, and the species and island are set to their reference level (determined by R). This would make sense, as we would expect the body weight of these penguins to be greater than zero.
+
+
+Step 4: Checking the model, with the assumptions in mind.
+
+```{r}
+gam.check(gamm_model) #this is in the mcgv package
+```
+Here, we have some of the diagnostic plots to see if the GAMM is working "properly" with the data, or if the data fits appropriately to the GAMM.
+
+The first plot is a QQ plot. Here you have the theoretical quantiles, which refers to a normal distribution, of which you are comparing your residuals from the GAMM to. In an ideal world, your residuals from your model would match a normal distribution perfectly. However, that does not happen, basically ever. The QQ plot allows you to visually check and make a judgement call on whether or not your residuals are distributed properly. Here, I would say that they are, becuase the points (the residuals) are not straying too far from the line (the normal distribution), and especially are not straying from the line in any sort of recognizable pattern. Good to go!
+
+The second plot shows the linear predictors (or the fitted values before the link function is used) against the residuals. Without diving too deep intot the theory behind this, one can basically see whether or not the link function fits properly to the data, or if another link function needs to be chosen. If the link function is appropriate, then you will have the residuals largely centered around zero, with no clear pattern. If there is some sort of pattern, then this could mean that you may need to choose another link function. But, with our GAMM, we can see that there is no real pattern in our deviation. Again, good to go!
+
+The histogram is another way of checking visually whether or not the residuals match up with a normal distribution. You are probably aware of the shape of a normal distribution - the bell curve. Here, we can see that our residuals largely follow that iconic bell curve shape.
+
+We can see whether or not the fitted values vary against the response values, our whether or not our model is predicting (generating fitted values) correctly. In general for using models like a GAMM, this is a nice plot to check to ensure that it is adequate. Here, we can see that the fitted values vary relatively linearly to the response values, which is a good sign as well.
+
+In the table, we see the results of the GAMM we fitted using a Restricted Maximum Likelihood (REML). Here we check the basis dimenions (k, fancy work for smooth functions, essentially). We are looking to see if our p values are too low (generally 0.05 is the cutoff) or if our k values are significantly less than one. This can tell us whether we need to add smoothing functions to capture more of the variation, or whether our model is capturing variation that is not really there, or the model is overfitted. Our model looks good. The k values for our predictor variables are close or over one, and the p values are not less than 0.05.
+
+Okay, diagnostic checks are done! Time to see what we are modelling.
+
+Step 5: Visualizing the Model
+
+There are a couple ways of displaying a GAMM model, and the option you choose (if you do not do both) will depend mostly on what you are trying to learn from the model. For example, there are partial plots, where you can see the individual effect of each of the predictor variables (as well as the random effects, if specified) on the response variable. Or, you can set up new predictions for the response variable based on the GAMM, and see how well they match up to the original values. 
+
+For the purpose of the case study, we are going to choose the second option - new predictions via our GAMM. This allows us to visually comprehend the model that we created, and to see if it is truly accurate to the data. Until now, we have only done the diagnostic check plots, so we have not seen our GAMM in action. Also, it is really important to see how the individual smooth terms (or predictors) play their own roles, but the GAMM is also used to see how these terms come together to influence the response variable.
+
+```{r, message=FALSE, warning=FALSE}
+pred_weight <- predict(gamm_model, newdata = penguins, type = "response") #simple code to predict new response variables based on the model
+penguins$pred_weight <- pred_weight #adds the column to the original dataframe
+
+ggplot(penguins, aes(x = bill_length_mm)) +
+  geom_point(aes(y = body_mass_g, color = "Observed Response"), size = 2) +  # first, the observed response variable data points
+  geom_point(aes(y = pred_weight, color = "Predicted Response"), size = 2) + #then the data points for the predicted response variable
+  geom_smooth(aes(y = body_mass_g, color = "Observed Response"), size = 3, se = FALSE) + #then a smooth line based on the observed data, se = FALSE means that the plot does not show the standard error shading, made the line bigger so you can see it properly
+  geom_smooth(aes(y = pred_weight, color = "Predicted Response"), se = FALSE) + #and a smooth line based on the predicted data
+  scale_color_manual(
+    values = c("Observed Response" = "black", "Predicted Response" = "darkgray"),
+               name = "Color Key"
+    )+
+  labs(
+    title = "Observed vs Predicted Body Weight Based on Bill Length",
+    x = "Bill Length (mm)",
+    y = "Body Weight (g)"
+  )
+
+
+```
+
+Here, we have our actual body weights in black, and our predicted body weights based on the GAMM we have created in gray. We can see that the points of the predicted and observed counts are not one and the same, but are quite similar. This is especially true for the smooth lines of best fit based off the data points. I chose one of the response variables to plot instead of all for simplicity, but this could be possible for any or all of the predictor variables. Based on this plot, one could say that the GAMM fit the relationship between the predictor and response variable well, and thus could use the GAMM for further predictions.
+
+
+
+
+
