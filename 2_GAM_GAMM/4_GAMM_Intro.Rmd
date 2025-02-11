@@ -38,3 +38,9 @@ Notice that the random effects are treated as such by using bs = "re", or the ba
 
 In this format, it is relatively clear to see what are your explanatory variables (predictors), the response, the smoothing effects (s) and the random effect. There is not too much of a difference between GAM and GAMM structurally, but it allows for greater freedom when handling complex (perhaps ecological) datasets. 
 
+Sources
+Contributors of the QCBS R Workshop Series. (n.d.). Workshop 8: Generalized additive models in R. Chapter 11 Introduction to Generalized Additive Mixed Models (GAMMs). https://r.qcbs.ca/workshop08/book-en/introduction-to-generalized-additive-mixed-models-gamms.html 
+
+DrMowinckels. (2019, November 6). Plotting Gamm interactions with GGPLOT2 - dr. Mowinckel’s. Plotting GAMM interactions with ggplot2 - Dr. Mowinckel’s. https://drmowinckels.io/blog/2019/plotting-gamm-interactions-with-ggplot2/ 
+
+Wood, S. N. (n.d.). Generalized Additive Mixed Models. R: Generalized additive mixed models. https://stat.ethz.ch/R-manual/R-devel/library/mgcv/html/gamm.html 
